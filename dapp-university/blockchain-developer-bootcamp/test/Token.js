@@ -2,22 +2,19 @@ const { ethers } = require("hardhat");
 const { expect } = require("chai");
 
 describe("Token", async () => {
-  let token, 
-    accounts,
-    deployer;
+  let token, accounts, deployer, receiver;
 
   beforeEach(async () => {
     // Code goes here that runs before each example
-    
+
     //Customise - set my own deploy account
     accounts = await ethers.getSigners();
-    deployer = accounts[1];
+    deployer = accounts[0];
+    receiver = accounts[1];
 
     //Fetch token from blockchain
-    const Token = await ethers.getContractFactory("Token",deployer);
+    const Token = await ethers.getContractFactory("Token", deployer);
     token = await Token.deploy("Dapp University", "DAPP", 1000000);
-
-
   });
   describe("Deployment", async () => {
     const name = "Dapp University";
@@ -48,12 +45,33 @@ describe("Token", async () => {
 
     it("assigns the total supply to the deployer", async () => {
       //Check that the total supply is correct
-      expect(await token.balanceOf(token.signer.address)).to.equal(
-        ethers.utils.parseEther(totalSupply.toString()));
+      expect(await token.balanceOf(deployer.address)).to.equal(
+        ethers.utils.parseEther(totalSupply.toString())
+      );
     });
 
-    it("checks that the signer is the specified deployer account for the token", async() =>{
-        expect(await token.signer.address).to.equal(deployer.address);
-    })
+    it("checks that the signer is the specified deployer account for the token", async () => {
+      expect(await token.signer.address).to.equal(deployer.address);
+    });
+  });
+
+  describe("Sending tokens", async () => {
+    let amount, transaction, result;
+    beforeEach(async () => {
+      //Transfer 100 tokens from deployer to another account
+
+      amount = ethers.utils.parseEther("100");
+      transaction = await token
+        .connect(deployer)
+        .transfer(receiver.address, amount);
+      result = transaction.wait();
+    });
+    it("transfers tokens between accounts", async () => {
+      //Ensure that tokens were transfered (balance changed)
+      expect(await token.balanceOf(deployer.address)).to.equal(
+        ethers.utils.parseEther("999900")
+      );
+      expect(await token.balanceOf(receiver.address)).to.equal(amount);
+    });
   });
 });
