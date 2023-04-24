@@ -64,7 +64,7 @@ describe("Token", async () => {
       transaction = await token
         .connect(deployer)
         .transfer(receiver.address, amount);
-      result = transaction.wait();
+      result = await transaction.wait();
     });
     it("transfers tokens between accounts", async () => {
       //Ensure that tokens were transfered (balance changed)
@@ -72,6 +72,16 @@ describe("Token", async () => {
         ethers.utils.parseEther("999900")
       );
       expect(await token.balanceOf(receiver.address)).to.equal(amount);
+    });
+    it("emits a Transfer event", async () => {
+      //Ensure that the Transfer event was emitted
+      expect(result).to.emit(token, "Transfer");
+     
+      const event = result.events[0];
+      expect(event.event).to.equal("Transfer");
+      expect(event.args.from).to.equal(deployer.address);
+      expect(event.args.to).to.equal(receiver.address);
+      expect(event.args.value).to.equal(amount);
     });
   });
 });

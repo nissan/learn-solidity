@@ -13,6 +13,7 @@ contract Token {
 
     // Track balances
     mapping(address => uint256) public balanceOf;
+    event Transfer(address indexed from, address indexed to, uint256 value);
 
     // Send tokens
     function transfer(
@@ -24,6 +25,10 @@ contract Token {
 
         // Credit tokens to receiver
         balanceOf[_to] += _value;
+
+        // Emit transfer event
+        emit Transfer(msg.sender, _to, _value);
+        return true;
     }
 
     constructor(
