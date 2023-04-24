@@ -2,14 +2,22 @@ const { ethers } = require("hardhat");
 const { expect } = require("chai");
 
 describe("Token", async () => {
-  let token;
+  let token, 
+    accounts,
+    deployer;
 
   beforeEach(async () => {
     // Code goes here that runs before each example
+    
+    //Customise - set my own deploy account
+    accounts = await ethers.getSigners();
+    deployer = accounts[1];
 
     //Fetch token from blockchain
-    const Token = await ethers.getContractFactory("Token");
+    const Token = await ethers.getContractFactory("Token",deployer);
     token = await Token.deploy("Dapp University", "DAPP", 1000000);
+
+
   });
   describe("Deployment", async () => {
     const name = "Dapp University";
@@ -37,5 +45,15 @@ describe("Token", async () => {
         ethers.utils.parseEther(totalSupply.toString())
       );
     });
+
+    it("assigns the total supply to the deployer", async () => {
+      //Check that the total supply is correct
+      expect(await token.balanceOf(token.signer.address)).to.equal(
+        ethers.utils.parseEther(totalSupply.toString()));
+    });
+
+    it("checks that the signer is the specified deployer account for the token", async() =>{
+        expect(await token.signer.address).to.equal(deployer.address);
+    })
   });
 });
