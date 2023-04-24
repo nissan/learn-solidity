@@ -132,13 +132,40 @@ describe("Token", async () => {
       });
     });
     describe("Failure", async () => {
-
-        it("rejects invalid spenders", async () => {
-            amount = ethers.utils.parseEther("100");
-            await expect(
-            token.connect(deployer).approve(ethers.constants.AddressZero, amount)
-            ).to.be.reverted;
-        });
+      it("rejects invalid spenders", async () => {
+        amount = ethers.utils.parseEther("100");
+        await expect(
+          token.connect(deployer).approve(ethers.constants.AddressZero, amount)
+        ).to.be.reverted;
+      });
     });
+  });
+
+  describe("Delegated Token Transfers", async () => {
+    let amount, transaction, result;
+    beforeEach(async () => {
+      //Approve 100 tokens for receiver to spend
+      amount = ethers.utils.parseEther("100");
+      transaction = await token
+        .connect(deployer)
+        .approve(exchange.address, amount);
+      result = await transaction.wait();
+    });
+    describe("Success", async () => {
+      beforeEach(async () => {
+        //Transfer 100 tokens from deployer to receiver account by exchange
+        transaction = await token
+          .connect(exchange)
+          .transferFrom(deployer.address, receiver.address, amount);
+        result = await transaction.wait();
+      });
+      it("Transfers token balances", async () => {
+        expect(await token.balanceOf(deployer.address)).to.be.equal(
+          ethers.utils.parseEther("999900")
+        );
+        expect(await token.balanceOf(receiver.address)).to.be.equal(amount);
+      });
+    });
+    describe("Failure", async () => {});
   });
 });
