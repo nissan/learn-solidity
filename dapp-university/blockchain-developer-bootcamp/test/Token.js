@@ -57,31 +57,48 @@ describe("Token", async () => {
 
   describe("Sending tokens", async () => {
     let amount, transaction, result;
-    beforeEach(async () => {
-      //Transfer 100 tokens from deployer to another account
+    describe("Success", async () => {
+      beforeEach(async () => {
+        //Transfer 100 tokens from deployer to another account
 
-      amount = ethers.utils.parseEther("100");
-      transaction = await token
-        .connect(deployer)
-        .transfer(receiver.address, amount);
-      result = await transaction.wait();
+        amount = ethers.utils.parseEther("100");
+        transaction = await token
+          .connect(deployer)
+          .transfer(receiver.address, amount);
+        result = await transaction.wait();
+      });
+      it("transfers tokens between accounts", async () => {
+        //Ensure that tokens were transfered (balance changed)
+        expect(await token.balanceOf(deployer.address)).to.equal(
+          ethers.utils.parseEther("999900")
+        );
+        expect(await token.balanceOf(receiver.address)).to.equal(amount);
+      });
+      it("emits a Transfer event", async () => {
+        //Ensure that the Transfer event was emitted
+        expect(result).to.emit(token, "Transfer");
+
+        const event = result.events[0];
+        expect(event.event).to.equal("Transfer");
+        expect(event.args.from).to.equal(deployer.address);
+        expect(event.args.to).to.equal(receiver.address);
+        expect(event.args.value).to.equal(amount);
+      });
     });
-    it("transfers tokens between accounts", async () => {
-      //Ensure that tokens were transfered (balance changed)
-      expect(await token.balanceOf(deployer.address)).to.equal(
-        ethers.utils.parseEther("999900")
-      );
-      expect(await token.balanceOf(receiver.address)).to.equal(amount);
-    });
-    it("emits a Transfer event", async () => {
-      //Ensure that the Transfer event was emitted
-      expect(result).to.emit(token, "Transfer");
-     
-      const event = result.events[0];
-      expect(event.event).to.equal("Transfer");
-      expect(event.args.from).to.equal(deployer.address);
-      expect(event.args.to).to.equal(receiver.address);
-      expect(event.args.value).to.equal(amount);
+    describe("Failure", async () => {
+      it("rejects a transfer if sender does not have enough tokens", async () => {
+        // Transfer more tokens than deployer has - 10M
+        const invalidAmount = ethers.utils.parseEther("10000000");
+        await expect(
+          token.connect(deployer).transfer(receiver.address, invalidAmount)
+        ).to.be.reverted;
+      });
+      it("rejects invalid receivers", async () => {
+        amount = ethers.utils.parseEther("100");
+        await expect(
+          token.connect(deployer).transfer(ethers.constants.AddressZero, amount)
+        ).to.be.reverted;
+      });
     });
   });
 });

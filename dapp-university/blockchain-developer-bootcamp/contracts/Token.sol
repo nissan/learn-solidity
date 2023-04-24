@@ -20,6 +20,9 @@ contract Token {
         address _to,
         uint256 _value
     ) public returns (bool success) {
+        // Require that the sender has enough tokens to spend
+        require(balanceOf[msg.sender] >= _value, "Not enough tokens");
+        require(_to != address(0), "Cannot send to zero address");
         // Deduct tokens from sender
         balanceOf[msg.sender] -= _value;
 
