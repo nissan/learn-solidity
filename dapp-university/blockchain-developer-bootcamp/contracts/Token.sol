@@ -47,6 +47,7 @@ contract Token {
         uint256 _value
     ) public returns (bool success) {
         require(allowance[_from][msg.sender] >= _value, "Not enough allowance");
+        allowance[_from][msg.sender] -= _value;
         _transfer(_from, _to, _value);
         return true;
     }
