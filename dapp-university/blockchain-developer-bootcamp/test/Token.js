@@ -2,7 +2,7 @@ const { ethers } = require("hardhat");
 const { expect } = require("chai");
 
 describe("Token", async () => {
-  let token, accounts, deployer, receiver;
+  let token, accounts, deployer, receiver, exchange;
 
   beforeEach(async () => {
     // Code goes here that runs before each example
@@ -11,6 +11,7 @@ describe("Token", async () => {
     accounts = await ethers.getSigners();
     deployer = accounts[0];
     receiver = accounts[1];
+    exchange = accounts[2];
 
     //Fetch token from blockchain
     const Token = await ethers.getContractFactory("Token", deployer);
@@ -99,6 +100,45 @@ describe("Token", async () => {
           token.connect(deployer).transfer(ethers.constants.AddressZero, amount)
         ).to.be.reverted;
       });
+    });
+  });
+
+  describe("Approving tokens", async () => {
+    let amount, transaction, result;
+    describe("Success", async () => {
+      beforeEach(async () => {
+        //Approve 100 tokens for receiver to spend
+        amount = ethers.utils.parseEther("100");
+        transaction = await token
+          .connect(deployer)
+          .approve(exchange.address, amount);
+        result = await transaction.wait();
+      });
+      it("allocates an allowance for delegated token spending on another account", async () => {
+        // Ensure that the allowance was set
+        expect(
+          await token.allowance(deployer.address, exchange.address)
+        ).to.equal(amount);
+      });
+      it("emits an Approval event", async () => {
+        // Ensure that the Approval event was emitted
+        expect(result).to.emit(token, "Approval");
+
+        const event = result.events[0];
+        expect(event.event).to.equal("Approval");
+        expect(event.args.owner).to.equal(deployer.address);
+        expect(event.args.spender).to.equal(exchange.address);
+        expect(event.args.value).to.equal(amount);
+      });
+    });
+    describe("Failure", async () => {
+
+        it("rejects invalid spenders", async () => {
+            amount = ethers.utils.parseEther("100");
+            await expect(
+            token.connect(deployer).approve(ethers.constants.AddressZero, amount)
+            ).to.be.reverted;
+        });
     });
   });
 });
