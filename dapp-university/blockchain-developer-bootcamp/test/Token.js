@@ -182,19 +182,26 @@ describe("Token", async () => {
       });
     });
     describe("Failure", async () => {
-        it("rejects insufficient amounts", async () => {
-            //Attempt to transfer too many tokens
-            const invalidAmount = ethers.utils.parseEther("10000000");
-            await expect(
-                token.connect(exchange).transferFrom(deployer.address, receiver.address, invalidAmount)
-            ).to.be.reverted;
-        });
-        it("rejects invalid receivers", async () => {
-            await expect(
-                token.connect(exchange).transferFrom(deployer.address, ethers.constants.AddressZero, amount)
-            ).to.be.reverted;
-        
-        });
+      it("rejects insufficient amounts", async () => {
+        //Attempt to transfer too many tokens
+        const invalidAmount = ethers.utils.parseEther("10000000");
+        await expect(
+          token
+            .connect(exchange)
+            .transferFrom(deployer.address, receiver.address, invalidAmount)
+        ).to.be.reverted;
+      });
+      it("rejects invalid receivers", async () => {
+        await expect(
+          token
+            .connect(exchange)
+            .transferFrom(
+              deployer.address,
+              ethers.constants.AddressZero,
+              amount
+            )
+        ).to.be.reverted;
+      });
     });
   });
 });
